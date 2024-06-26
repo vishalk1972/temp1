@@ -140,6 +140,7 @@ const categorySubcategoryAssignment=async(req,res)=>{
                 })
 
                 await Promise.all(updatedPromise);
+                console.log('------------------------ Final Output ------------------')
                 console.log(updatedPromise);
 
             }catch(error)
