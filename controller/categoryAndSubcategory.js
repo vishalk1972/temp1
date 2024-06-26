@@ -47,7 +47,7 @@ const categorySubcategoryAssignment=async(req,res)=>{
             json.subcategory=tempArray;
             categoryJson.push(json);
         }
-        console.log(categoryJson);
+        // console.log(categoryJson);
         let stdQuestion=await db.QuestionMetadata.findMany({
             select:{
                 id:true,
@@ -103,8 +103,8 @@ const categorySubcategoryAssignment=async(req,res)=>{
             Now I'm Giving List Of Questions which you have to categorize based on the categories and subcategories I have provided you with:
             ${questionsPart}
             `;
-            console.log('--------------------------------------------------- \n');
-            console.log(prmpt);
+            // console.log('--------------------------------------------------- \n');
+            // console.log(prmpt);
 
             try{
                 const completion = await groq.chat.completions.create({
@@ -125,19 +125,22 @@ const categorySubcategoryAssignment=async(req,res)=>{
 
                 // Parse the JSON string into a JavaScript object
                 const questionsArray = JSON.parse(arrayPart);
+                console.log(questionsArray);
 
-                questionsArray.map(async(q)=>{
-                    const data=await db.QuestionMetadata.update({
+                const updatedPromise=questionsArray.map(async(q)=>{
+                    return db.QuestionMetadata.update({
                         where:{
-                            id:Qid,
+                            id:q.Qid,
                         },
                         data:{
                             subcategoryIds:q.Subcategories,
                             categoryIds:q.Maincategory
-
                         }
                     })
                 })
+
+                await Promise.all(updatedPromise);
+                console.log(updatedPromise);
 
             }catch(error)
             {
