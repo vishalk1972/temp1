@@ -72,7 +72,7 @@ const categorySubcategoryAssignment=async(req,res)=>{
         
             // Constructed the full prompt
             prmpt = `
-            Given the following medical question, categorize it into the relevant categories and sub-categories. If you cannot categorize the question into any of the categories listed below, provide the output as "-1".
+            Given the following medical question, categorize it into the relevant categories and sub-categories. If you cannot categorize the question into any of the categories listed below,Then Non medical Category is suitable for them.
 
             
             Example:
@@ -103,9 +103,7 @@ const categorySubcategoryAssignment=async(req,res)=>{
             Now I'm Giving List Of Questions which you have to categorize based on the categories and subcategories I have provided you with:
             ${questionsPart}
             `;
-            // console.log('--------------------------------------------------- \n');
-            // console.log(prmpt);
-
+           
             try{
                 const completion = await groq.chat.completions.create({
                     messages: [
@@ -120,12 +118,9 @@ const categorySubcategoryAssignment=async(req,res)=>{
                 const start = response.indexOf('[');
                 const end = response.lastIndexOf(']') + 1;
 
-                // Extract the array part
+                
                 const arrayPart = response.substring(start, end);
-
-                // Parse the JSON string into a JavaScript object
                 const questionsArray = JSON.parse(arrayPart);
-                console.log(questionsArray);
 
                 const updatedPromise=questionsArray.map(async(q)=>{
                     return db.QuestionMetadata.update({
@@ -140,8 +135,19 @@ const categorySubcategoryAssignment=async(req,res)=>{
                 })
 
                 await Promise.all(updatedPromise);
+                
                 console.log('------------------------ Final Output ------------------')
-                console.log(updatedPromise);
+                Promise.all(updatedPromise).then(resolvedQuestions => {
+                    resolvedQuestions.forEach((question, index) => {
+                      console.log(`Question ${index + 1}:`);
+                      console.log(`ID: ${question.id}`);
+                      console.log(`Question: ${question.question}`);
+                      console.log(`Related QA IDs: ${question.relatedQAIds}`);
+                      console.log(`Category IDs: ${question.categoryIds}`);
+                      console.log(`Subcategory IDs: ${question.subcategoryIds}`);
+                      console.log('-------------------------');
+                    });
+                });
 
             }catch(error)
             {
