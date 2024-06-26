@@ -129,7 +129,7 @@ const categorySubcategoryAssignment=async(req,res)=>{
                         },
                         data:{
                             subcategoryIds:q.Subcategories,
-                            categoryIds:q.Maincategory
+                            categoryIds:q.Maincategory,
                         }
                     })
                 })
