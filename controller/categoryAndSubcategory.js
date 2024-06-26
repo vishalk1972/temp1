@@ -128,8 +128,18 @@ const categorySubcategoryAssignment=async(req,res)=>{
                             id:q.Qid,
                         },
                         data:{
-                            subcategoryIds:q.Subcategories,
-                            categoryIds:q.Maincategory,
+                            subcategoryIds:{
+                                set:q.Subcategories
+                            },
+                            categoryIds:{   
+                                set :q.Maincategory
+                            },
+                            categories: {
+                                connect: q.Maincategory.map(categoryId => ({ id: categoryId }))
+                            },
+                            subcategories: {
+                                connect: q.Subcategories.map(subcategoryId => ({ id: subcategoryId }))
+                            }
                         }
                     })
                 })
