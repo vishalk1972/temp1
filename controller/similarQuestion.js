@@ -1,29 +1,26 @@
 const { db } = require('../db.js');
-const { OpenAI } = require('openai');
-// const { connect } = require('../routes/CategorizationRoutes.js');
+const Groq=require('groq-sdk')
 
-const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY
-  });
+const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
-const similarQuestionAndCategory=async(req,res)=>{
+const similarQuestion=async(req,res)=>{
     try{
         const AllQuestions = await db.qA.findMany({
             select: {
               id: true,
               question: true
-            }
+            },
+            skip:50
         });
         const output=[]
-        for(i=0;i<500;i++)
+        for(i=0;i<50;i++)
         {
             const singleQuesion=AllQuestions[i];
 
             const qId=singleQuesion.id;
             let qString=singleQuesion.question;
             qString=qString.toLowerCase()
-            console.log(qString,"<->")
-
+            
             const prompt=`
             Extract the 'Standard Question' from the given input question.
             1. A 'Standard Question' is a canonical representation derived from multiple similar questions that share the same meaning and answer.
@@ -32,25 +29,27 @@ const similarQuestionAndCategory=async(req,res)=>{
             4. The goal is to standardize these questions into a single standard question as stated above.
             5. Input questions are given by normal humans. If the question is not clear, kindly give '-1' as the output and do not provide any other explanations.
             6. Please generate the 'Standard Question' for the input: ${qString}
-            7. Ensure the output question maintains clarity and is suitable for categorizing similar queries effectively. Output only a single string format, no explanations. Ensure the 'Standard Question' is in lowercase for consistency.
-            8. Please keep consistency in output and provide output in double quotes ("") always.
-            9. If the input question is not related to medical procedures, body systems, diseases, medical imaging, medical specialties, anatomy, or the doctor field, then give the output as "-1" in string format.
-            10. Before giving "-1", check if the question has a medical reference. If the question has no reference to the medical field, then only return "-1".
+            7. Ensure the output question maintains clarity and is suitable for categorizing similar queries effectively. Output only a single string format, no explanations needed and just give me a simple output.
+            8. Ensure the 'Standard Question' is in lowercase for consistency.
+            9. Please output the 'Standard Question' in double-byte quotes (""") always.
+            10. If the input question is not related to medical procedures, body systems, diseases, medical imaging, medical specialties, anatomy, or the doctor field, then:
+                * Check if the question has a medical reference. If the question has no reference to the medical field, then: Output '-1' as the response.
+                * If the question has a medical reference, then: Extract the 'Standard Question' as described above.
             11. To check if a question is related to medical or not, you can refer to this: Medical-related questions typically involve inquiries about health, diseases, treatments, symptoms, anatomy, or healthcare practices. On the other hand, non-medical questions cover a wide range of subjects unrelated to health or medicine. Provide your response based on this distinction.
+            12. Output only the 'Standard Question' itself, without any explanations or additional text.
+            13. Consider every question as a new question and if the input question is not related to medical procedures, body systems, diseases, medical imaging, medical specialties, anatomy, or the doctor field, and does not have a medical reference, then output "-1" (in double-byte quotes) as the response.
             `
-
-            const completion = await openai.chat.completions.create({
+            const completion = await groq.chat.completions.create({
                 messages: [
-                  { role: 'system', content: 'You are a Professional Assistant' },
+                  { role: 'system', content: 'You are a Professional Medical Expert.' },
                   { role: 'user', content: prompt }
                 ],
-                model: 'gpt-4',
+                model: 'llama3-70b-8192',
                 temperature: 0,
             });
-            
+
             let OpenAiStandardQuestion=completion.choices[0].message.content;
-            console.log('----------------------------------------- \n')
-            console.log(OpenAiStandardQuestion,'\n')
+            
 
             let check=await db.QuestionMetadata.findUnique({
                 where:{
@@ -75,7 +74,7 @@ const similarQuestionAndCategory=async(req,res)=>{
                     relatedQAIds:true
                 }
             })
-            console.log('check 2',check2)
+
             if(!check2.relatedQAIds.includes(qId))
             {
                 const res=await db.QuestionMetadata.update({
@@ -90,6 +89,16 @@ const similarQuestionAndCategory=async(req,res)=>{
                     }
                   });
             } 
+            console.log('----------------------------------------- \n')
+            console.log('No       :',i)
+            console.log('Question :',qString)
+            console.log('Standard :',OpenAiStandardQuestion)
+            const currentDate = new Date();
+            const hours = String(currentDate.getHours()).padStart(2, '0');
+            const minutes = String(currentDate.getMinutes()).padStart(2, '0');
+            const seconds = String(currentDate.getSeconds()).padStart(2, '0');
+            const formattedDate = `${hours}:${minutes}:${seconds}`;
+            console.log('Time     :',formattedDate);
         }
         const finalData=await db.QuestionMetadata.findMany({
             include:{
@@ -100,7 +109,7 @@ const similarQuestionAndCategory=async(req,res)=>{
         res.json({
             success:true,
             message:'ok',
-            data:finalData
+            data:finalData,
         })
     }catch(error)
     {
@@ -110,4 +119,4 @@ const similarQuestionAndCategory=async(req,res)=>{
         })
     }
 }
-module.exports=similarQuestionAndCategory;
+module.exports=similarQuestion;
