@@ -1,7 +1,7 @@
 const {db}= require('../../db.js')
 const TopQuestionsAndUniqueUserData=async(req,res)=>{
-    try{
-        console.log(req.body);
+  try{
+      // Top X Most Asked Question Done
         const param=req.body.count;
         const questions = await prisma.questionMetadata.findMany({
             select: {
@@ -17,21 +17,56 @@ const TopQuestionsAndUniqueUserData=async(req,res)=>{
             Count: question.relatedQAIds.length,
           })).sort((a, b) => b.Count - a.Count)
 
-          let ResulData=[]
+          let ResultData=[]
           const limit=parseInt(param)
           if(param.toLowerCase()==='all')
           {
-                ResulData=sortedQuestions
+                ResultData=sortedQuestions
           }
           else{
-                ResulData=sortedQuestions.slice(0,limit)
+                ResultData=sortedQuestions.slice(0,limit)
           }
-          // Top X Most Asked Question
-          
+          // 
+          const ResultData2=[]
+          for(const Eachquestion of filteredQuestions)
+          {
+              let question=Eachquestion.question
+              let QAIdArray=Eachquestion.relatedQAIds
+              let uniqueUsers = new Set();
+              for(const EachquestionId of QAIdArray)
+              {
+                const Eachuser = await prisma.qA.findMany({
+                    where:{
+                        id:EachquestionId
+                    },
+                    select: {
+                        users:true
+                    }
+                })
+
+                Eachuser.forEach(user => {
+                  const userExists = Array.from(uniqueUsers).some(u => u.id === user.users.id);
+                  if (!userExists) {
+                      uniqueUsers.add(user.users);
+                  }
+              });
+                
+              }
+              const uniqueUsersArray = Array.from(uniqueUsers);
+              const questionData = {
+                  question: question,
+                  UsersCount:uniqueUsersArray.length,
+                  users: uniqueUsersArray
+              };
+
+              ResultData2.push(questionData);
+              // console.log('--------------------------------------------->')
+          }
         res.json({
             "success":true,
             "message":"Done",
-            "data":ResulData
+            "TopAskedQuestions":ResultData,
+            "UniqueUsersPerQuestion":ResultData2
         })
     }catch(error)
     {
