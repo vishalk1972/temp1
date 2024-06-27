@@ -60,7 +60,7 @@ const similarQuestion=async(req,res)=>{
         });
         const output=[]
         let chunkSize=10;
-        for (let i = 0; i <=51; i += chunkSize) {
+        for (let i = 0; i <=200; i += chunkSize) {
             let selectedArray = AllQuestions.slice(i, i + chunkSize);
             console.log("Chunk :- \n",selectedArray);
             let Qpart=selectedArray.map((q)=>{
@@ -126,6 +126,7 @@ const similarQuestion=async(req,res)=>{
                     temperature: 0,
                 });
                 console.log('GROQ OUTPUT ------------------->')
+
                 const response=completion.choices[0].message.content;
                 console.log(response)
                 const start = response.indexOf('[');

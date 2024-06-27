@@ -115,12 +115,14 @@ const categorySubcategoryAssignment=async(req,res)=>{
                 });
                 console.log('GROQ OUTPUT ------------------->')
                 const response=completion.choices[0].message.content;
+                console.log(response)
                 const start = response.indexOf('[');
                 const end = response.lastIndexOf(']') + 1;
 
                 
                 const arrayPart = response.substring(start, end);
                 const questionsArray = JSON.parse(arrayPart);
+                console.log(questionsArray)
 
                 const updatedPromise=questionsArray.map(async(q)=>{
                     return db.QuestionMetadata.update({
