@@ -26,7 +26,7 @@ const TopQuestionsAndUniqueUserData=async(req,res)=>{
           else{
                 ResultData=sortedQuestions.slice(0,limit)
           }
-          // 
+          // Unique Users Per Standard Question Done
           const ResultData2=[]
           for(const Eachquestion of filteredQuestions)
           {
@@ -60,7 +60,6 @@ const TopQuestionsAndUniqueUserData=async(req,res)=>{
               };
 
               ResultData2.push(questionData);
-              // console.log('--------------------------------------------->')
           }
         res.json({
             "success":true,
