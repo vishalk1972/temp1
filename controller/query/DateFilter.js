@@ -34,7 +34,7 @@ const DateFilter = async (req, res) => {
         }
 
         // Query the QA table to get all entries within the specified date range
-        const qaEntries = await prisma.qA.findMany({
+        const qaEntries = await db.qA.findMany({
             where: {
                 createdAt: {
                     gte: startDate,
@@ -50,7 +50,7 @@ const DateFilter = async (req, res) => {
         const qaIds = qaEntries.map(entry => entry.id);
 
         // Fetch all questions from QuestionMetadata
-        const questionsMetadata = await prisma.questionMetadata.findMany({
+        const questionsMetadata = await db.questionMetadata.findMany({
             select: {
                 id: true,
                 question: true,
