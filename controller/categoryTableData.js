@@ -66,8 +66,6 @@ const categoryTableData = async (req, res) => {
           subcategoryIds: subcategoryIds
         }
       });
-
-      console.log(`Category ${i} :- `, mainCategory);
     }
 
     // Fetch data with relations included
@@ -82,6 +80,9 @@ const categoryTableData = async (req, res) => {
         categories: true,
       }
     });
+
+    console.log(dataOfCategories);
+    console.log(dataOfSubcategories)
 
     res.json({
       success: true,

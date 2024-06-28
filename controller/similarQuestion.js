@@ -44,9 +44,6 @@ async function processQuestions(questions) {
             }
           }
         });
-        console.log("Question:-",question)
-        console.log("Data:- ",data);
-        
       }
     }
 }
@@ -58,11 +55,9 @@ const similarQuestion=async(req,res)=>{
               question: true
             },
         });
-        const output=[]
         let chunkSize=10;
         for (let i = 0; i <=200; i += chunkSize) {
             let selectedArray = AllQuestions.slice(i, i + chunkSize);
-            console.log("Chunk :- \n",selectedArray);
             let Qpart=selectedArray.map((q)=>{
                 return ` Id: ${q.id} , Question: ${q.question} , \n`
             })
@@ -125,25 +120,17 @@ const similarQuestion=async(req,res)=>{
                     model: 'llama3-70b-8192',
                     temperature: 0,
                 });
-                console.log('GROQ OUTPUT ------------------->')
-
                 const response=completion.choices[0].message.content;
-                console.log(response)
                 const start = response.indexOf('[');
                 const end = response.lastIndexOf(']') + 1;
         
                 const arrayPart = response.substring(start, end);
-                const StdquestionsArray = JSON.parse(arrayPart);
-                console.log('Parsed Array----------------------------->')
-                console.log(StdquestionsArray)
-                
+                const StdquestionsArray = JSON.parse(arrayPart);   
                 processQuestions(StdquestionsArray)
                 .then(() => {
                     console.log('All questions processed')
                 })
                 .catch(err => console.error('Error processing questions:', err));
-
-
             }catch(error)
             {
                 console.log(error);

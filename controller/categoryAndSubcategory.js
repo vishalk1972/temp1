@@ -113,17 +113,14 @@ const categorySubcategoryAssignment=async(req,res)=>{
                     model: 'llama3-70b-8192',
                     temperature: 0,
                 });
-                console.log('GROQ OUTPUT ------------------->')
                 const response=completion.choices[0].message.content;
-                console.log(response)
                 const start = response.indexOf('[');
                 const end = response.lastIndexOf(']') + 1;
 
                 
                 const arrayPart = response.substring(start, end);
                 const questionsArray = JSON.parse(arrayPart);
-                console.log(questionsArray)
-
+               
                 const updatedPromise=questionsArray.map(async(q)=>{
                     return db.QuestionMetadata.update({
                         where:{
