@@ -15,7 +15,7 @@ const CategoryFilter = async (req, res) => {
         let subcategoryExists = false;
 
         if (subcategory) {
-            subcategoryExists = await prisma.subcategory.findUnique({
+            subcategoryExists = await db.subcategory.findUnique({
                 where: {
                     name: subcategory
                 }
@@ -29,7 +29,7 @@ const CategoryFilter = async (req, res) => {
             }
 
             if (category) {
-                categoryExists = await prisma.category.findUnique({
+                categoryExists = await db.category.findUnique({
                     where: {
                         name: category
                     },
@@ -54,7 +54,7 @@ const CategoryFilter = async (req, res) => {
                 }
             }
 
-            questions = await prisma.questionMetadata.findMany({
+            questions = await db.questionMetadata.findMany({
                 where: {
                     subcategories: {
                         some: {
@@ -69,7 +69,7 @@ const CategoryFilter = async (req, res) => {
                 }
             });
         } else if (category) {
-            categoryExists = await prisma.category.findUnique({
+            categoryExists = await db.category.findUnique({
                 where: {
                     name: category
                 }
@@ -82,7 +82,7 @@ const CategoryFilter = async (req, res) => {
                 });
             }
 
-            questions = await prisma.questionMetadata.findMany({
+            questions = await db.questionMetadata.findMany({
                 where: {
                     categories: {
                         some: {
@@ -99,9 +99,11 @@ const CategoryFilter = async (req, res) => {
         }
 
         const filteredQuestions = questions.filter(question => question.question !== '-1');
-          
+        
         const sortedQuestions = filteredQuestions.map(question => ({
-            ...question,
+            id:question.id,
+            question:question.id,
+
             Count: question.relatedQAIds.length,
         })).sort((a, b) => b.Count - a.Count);
 
@@ -120,4 +122,6 @@ const CategoryFilter = async (req, res) => {
         });
     }
 };
+
 module.exports=CategoryFilter
+
