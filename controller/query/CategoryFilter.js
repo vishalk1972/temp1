@@ -101,9 +101,7 @@ const CategoryFilter = async (req, res) => {
         const filteredQuestions = questions.filter(question => question.question !== '-1');
         
         const sortedQuestions = filteredQuestions.map(question => ({
-            id:question.id,
-            question:question.id,
-
+            ...question,
             Count: question.relatedQAIds.length,
         })).sort((a, b) => b.Count - a.Count);
 
