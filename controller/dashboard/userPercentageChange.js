@@ -1,5 +1,5 @@
 const { db } = require('../../db'); 
-const getPercentChange = async (req, res) => {
+const userPercentChange = async (req, res) => {
     try {
         // Calculate dates for previous complete month (June) and month before that (May)
         const currentDate = new Date();
@@ -59,4 +59,4 @@ const getPercentChange = async (req, res) => {
     }
 };
 
-module.exports = getPercentChange;
+module.exports = userPercentChange;
