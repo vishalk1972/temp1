@@ -1,7 +1,14 @@
 const { db } = require('../../db.js');
 const CategoryFilter = async (req, res) => {
     try {
-        const { category, subcategory } = req.body;
+        const { category, subcategory, from, to } = req.body;
+
+        if (!from || !to || !from.month || !from.year || !to.month || !to.year) {
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid date format',
+            });
+        }
 
         if (!category && !subcategory) {
             return res.status(400).json({
@@ -10,106 +17,110 @@ const CategoryFilter = async (req, res) => {
             });
         }
 
-        let questions = [];
-        let categoryExists = false;
-        let subcategoryExists = false;
+        // Default day to 1 if not specified
+        const fromDay = from.day || 1;
+        const toDay = to.day || 1;
 
-        if (subcategory) {
-            subcategoryExists = await db.subcategory.findUnique({
-                where: {
-                    name: subcategory
-                }
+        const startDate = new Date(from.year, from.month - 1, fromDay);
+        const endDate = new Date(to.year, to.month - 1, toDay);
+
+        if (startDate >= endDate) {
+            return res.status(400).json({
+                success: false,
+                message: 'The "from" date must be earlier than the "to" date',
             });
+        }
 
-            if (!subcategoryExists) {
-                return res.status(404).json({
-                    success: false,
-                    message: 'Sub-category not found',
-                });
-            }
+        let categoryFilter = {};
 
-            if (category) {
-                categoryExists = await db.category.findUnique({
+        if (subcategory && subcategory !== "") {
+            categoryFilter = {
+                subcategories: {
+                    some: {
+                        name: subcategory
+                    }
+                }
+            };
+
+            if (category && category !== "") {
+                const categoryExists = await prisma.category.findUnique({
                     where: {
                         name: category
                     },
                     include: {
-                        subcategories: true
+                        subcategories: {
+                            where: {
+                                name: subcategory
+                            }
+                        }
                     }
                 });
 
                 if (!categoryExists) {
                     return res.status(404).json({
                         success: false,
-                        message: 'Category not found',
-                    });
-                }
-
-                const isSubcategoryOfCategory = categoryExists.subcategories.some(sub => sub.name === subcategory);
-                if (!isSubcategoryOfCategory) {
-                    return res.status(400).json({
-                        success: false,
-                        message: 'Sub-category does not belong to the specified category',
+                        message: 'Category or sub-category not found',
                     });
                 }
             }
-
-            questions = await db.questionMetadata.findMany({
-                where: {
-                    subcategories: {
-                        some: {
-                            name: subcategory
-                        }
+        } else if (category && category !== "") {
+            categoryFilter = {
+                categories: {
+                    some: {
+                        name: category
                     }
-                },
-                select: {
-                    id: true,
-                    question: true,
-                    relatedQAIds: true
                 }
-            });
-        } else if (category) {
-            categoryExists = await db.category.findUnique({
-                where: {
-                    name: category
-                }
-            });
-
-            if (!categoryExists) {
-                return res.status(404).json({
-                    success: false,
-                    message: 'Category not found',
-                });
-            }
-
-            questions = await db.questionMetadata.findMany({
-                where: {
-                    categories: {
-                        some: {
-                            name: category
-                        }
-                    }
-                },
-                select: {
-                    id: true,
-                    question: true,
-                    relatedQAIds: true
-                }
-            });
+            };
         }
 
-        const filteredQuestions = questions.filter(question => question.question !== '-1');
-        
-        const sortedQuestions = filteredQuestions.map(question => ({
-            ...question,
-            Count: question.relatedQAIds.length,
+        const qaEntries = await prisma.qA.findMany({
+            where: {
+                createdAt: {
+                    gte: startDate,
+                    lte: endDate
+                }
+            },
+            select: {
+                id: true
+            }
+        });
+
+        const qaIdSet = new Set(qaEntries.map(entry => entry.id));
+
+        const questions = await prisma.questionMetadata.findMany({
+            where: {
+                AND: [
+                    categoryFilter,
+                    {
+                        relatedQAIds: {
+                            hasSome: Array.from(qaIdSet)
+                        }
+                    }
+                ]
+            },
+            select: {
+                id: true,
+                question: true,
+                relatedQAIds: true,
+                categories: {
+                    select: {
+                        name: true
+                    }
+                }
+            }
+        });
+
+        const filteredQuestions = questions.map(question => ({
+            id: question.id,
+            question: question.question,
+            Count: question.relatedQAIds.filter(qaId => qaIdSet.has(qaId)).length,
         })).sort((a, b) => b.Count - a.Count);
 
         res.json({
             success: true,
             message: 'Done',
-            data: sortedQuestions,
-            questionCount: sortedQuestions.length
+            data: filteredQuestions,
+            questionCount: filteredQuestions.length
         });
     } catch (error) {
         console.error('Error:', error);
@@ -122,4 +133,3 @@ const CategoryFilter = async (req, res) => {
 };
 
 module.exports=CategoryFilter
-

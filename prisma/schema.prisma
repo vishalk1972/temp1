@@ -113,7 +113,7 @@ model workspaces {
   QA        QA[]
   users     users    @relation(fields: [userId], references: [id])
 }
-
+//new created -1
 model Subcategory {
   id         String             @id @default(uuid())
   name       String             @unique
@@ -122,6 +122,7 @@ model Subcategory {
   categories Category           @relation(fields: [categoryId], references: [id])
 }
 
+//new created -2
 model Category {
   id             String             @id @default(uuid())
   name           String             @unique
@@ -130,6 +131,7 @@ model Category {
   questions      QuestionMetadata[] @relation("CategoryQuestionMetadata")
 }
 
+//new created -3
 model QuestionMetadata {
   id             String        @id @default(uuid())
   question       String        @unique
