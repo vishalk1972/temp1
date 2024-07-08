@@ -10,7 +10,7 @@ const userCount=async(req,res)=>{
             });
         }   
 
-        // Default day to 1 if not specified
+        // Default day to 1 if not specified here
         const fromDay = from.day || 1;
         const toDay = to.day || 1;
 
