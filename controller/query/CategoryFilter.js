@@ -131,6 +131,4 @@ const CategoryFilter = async (req, res) => {
         });
     }
 };
-
-module.exports=CategoryFilter 
-
+module.exports=CategoryFilter
