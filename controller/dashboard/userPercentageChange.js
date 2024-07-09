@@ -1,5 +1,8 @@
 const { db } = require('../../db'); 
+<<<<<<< HEAD
 
+=======
+>>>>>>> ddf18979920052d93942180aa096b942ff8d0bd5
 const userPercentageChange = async (req, res) => {
     try {
         // Calculate dates for previous complete month (June) and month before that (May)
@@ -59,4 +62,8 @@ const userPercentageChange = async (req, res) => {
         });
     }
 };
+<<<<<<< HEAD
+=======
+
+>>>>>>> ddf18979920052d93942180aa096b942ff8d0bd5
 module.exports = userPercentageChange;
