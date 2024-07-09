@@ -1,21 +1,26 @@
+const { db } = require('../../db.js');
+
+const parseDateInput = (dateStr) => {
+    const [month, day, year] = dateStr.split('/').map(Number);
+    return { day, month, year };
+};
 
 const userCount=async(req,res)=>{
     try {
-        const { from, to } = req.body;
+        const { StartDate, EndDate } = req.body;
 
-        if (!from || !to || !from.month || !from.year || !to.month || !to.year) {
+        if (!StartDate || !EndDate) {
             return res.status(400).json({
                 success: false,
                 message: 'Invalid date format',
             });
-        }   
+        }
 
-        // Default day to 1 if not specified here
-        const fromDay = from.day || 1;
-        const toDay = to.day || 1;
+        const from = parseDateInput(StartDate);
+        const to = parseDateInput(EndDate);
 
-        const startDate = new Date(from.year, from.month - 1, fromDay);
-        const endDate = new Date(to.year, to.month - 1, toDay);
+        const startDate = new Date(from.year, from.month - 1, from.day);
+        const endDate = new Date(to.year, to.month - 1, to.day);
 
         if (isNaN(startDate) || isNaN(endDate)) {
             return res.status(400).json({

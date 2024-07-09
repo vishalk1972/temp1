@@ -1,22 +1,26 @@
 const { db } = require('../../db.js');
 
+const parseDateInput = (dateStr) => {
+    const [month, day, year] = dateStr.split('/').map(Number);
+    return { day, month, year };
+};
+
 const TotalQuestions = async (req, res) => {
     try {
-        const { from, to } = req.body;
+        const { StartDate, EndDate } = req.body;
 
-        if (!from || !to || !from.month || !from.year || !to.month || !to.year) {
+        if (!StartDate || !EndDate) {
             return res.status(400).json({
                 success: false,
                 message: 'Invalid date format',
             });
         }
 
-        // Default day to 1 if not specified
-        const fromDay = from.day || 1;
-        const toDay = to.day || 1;
+        const from = parseDateInput(StartDate);
+        const to = parseDateInput(EndDate);
 
-        const startDate = new Date(from.year, from.month - 1, fromDay);
-        const endDate = new Date(to.year, to.month - 1, toDay);
+        const startDate = new Date(from.year, from.month - 1, from.day);
+        const endDate = new Date(to.year, to.month - 1, to.day);
 
         if (isNaN(startDate) || isNaN(endDate)) {
             return res.status(400).json({
@@ -33,19 +37,26 @@ const TotalQuestions = async (req, res) => {
             });
         }
 
-        // Query the database for the total number of questions within the date range
-        const totalQuestions = await db.qA.count({
+        // Query the database for the questions within the date range
+        const questions = await db.qA.findMany({
             where: {
                 createdAt: {
                     gte: startDate,
                     lte: endDate,
                 },
             },
+            select: {
+                id: true,
+            },
         });
+
+        // Extract the IDs from the questions
+        const questionIDs = questions.map(question => question.id);
 
         return res.status(200).json({
             success: true,
-            totalQuestions,
+            TotalQuestionsCount: questionIDs.length,
+            QuestionsList: questionIDs
         });
 
     } catch (error) {
