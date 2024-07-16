@@ -8,22 +8,23 @@ datasource db {
 }
 
 model QA {
-  id          String     @id @default(uuid())
-  userId      String
-  question    String
-  answer      String?
-  error       String?
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @default(now())
-  workspaceId String
-  vote        String[]
-  reason      String?
-  users       users      @relation(fields: [userId], references: [id])
-  workspaces  workspaces @relation(fields: [workspaceId], references: [id])
+  id               String             @id
+  userId           String
+  question         String
+  answer           String?
+  error            String?
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @default(now())
+  workspaceId      String
+  vote             String[]
+  reason           String?
+  users            users              @relation(fields: [userId], references: [id])
+  workspaces       workspaces         @relation(fields: [workspaceId], references: [id])
+  // QuestionMetadata QuestionMetadata[] @relation("QAQuestionMetadata")
 }
 
 model general_settings {
-  id                 String           @id @default(uuid())
+  id                 String           @id
   subscriptionAmount Float
   name               String
   subscriptionType   subscriptionType @unique
@@ -34,7 +35,7 @@ model general_settings {
 }
 
 model payment {
-  id             String                      @id @default(uuid())
+  id             String                      @id
   status         transaction_approval_status @default(PENDING)
   subscriptionId String?
   createdAt      DateTime                    @default(now())
@@ -43,7 +44,7 @@ model payment {
 }
 
 model signupToken {
-  id        String    @id @default(uuid())
+  id        String    @id
   token     String?
   status    Boolean?  @default(false)
   userId    String
@@ -53,7 +54,7 @@ model signupToken {
 }
 
 model subscription {
-  id                  String                       @id @default(uuid())
+  id                  String                       @id
   userId              String
   subscriptionType    subscriptionType             @default(free)
   queryCount          Int                          @default(50)
@@ -73,7 +74,7 @@ model subscription {
 }
 
 model tokens {
-  id        String    @id @default(uuid())
+  id        String    @id
   token     String
   user_id   String
   createdAt DateTime? @default(now())
@@ -82,7 +83,7 @@ model tokens {
 }
 
 model users {
-  id           String         @id @default(uuid())
+  id           String         @id
   email        String         @unique
   firstName    String
   lastName     String?
@@ -104,7 +105,7 @@ model users {
 }
 
 model workspaces {
-  id        String   @id @default(uuid())
+  id        String   @id
   userId    String
   isDeleted Boolean  @default(false)
   createdAt DateTime @default(now())
@@ -112,38 +113,41 @@ model workspaces {
   QA        QA[]
   users     users    @relation(fields: [userId], references: [id])
 }
-
+//new created -1
 model Subcategory {
-  id         String   @id @default(uuid())
-  name       String   @unique
+  id         String             @id @default(uuid())
+  name       String             @unique
   categoryId String
-  categories Category @relation(fields: [categoryId], references: [id])
+  // questions  QuestionMetadata[] @relation("SubcategoryQuestionMetadata")
+  categories Category           @relation(fields: [categoryId], references: [id])
 }
 
+//new created -2
 model Category {
-  id             String        @id @default(uuid())
-  name           String        @unique
+  id             String             @id @default(uuid())
+  name           String             @unique
   subcategoryIds String[]
-  subcategories  Subcategory[]
+  subcategories  Subcategory[]      @relation
+  // questions      QuestionMetadata[] @relation("CategoryQuestionMetadata")
 }
 
+//new created -3
 model QuestionMetadata {
-  id             String   @id @default(uuid())
-  question       String   @unique
+  id             String        @id @default(uuid())
+  question       String        @unique
   relatedQAIds   String[]
+  // relatedQAs     QA[]          @relation("QAQuestionMetadata")
+  // categories     Category[]    @relation("CategoryQuestionMetadata")
   categoryIds    String[]
+  // subcategories  Subcategory[] @relation("SubcategoryQuestionMetadata")
   subcategoryIds String[]
-}
-
-model ProcessingStatus {
-  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  lastProcessed DateTime
 }
 
 enum amount_type {
   CREDIT
   DEBIT
 }
+
 
 enum payment_status {
   SUCCESS

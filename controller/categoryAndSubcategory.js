@@ -6,6 +6,7 @@ const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 const categorySubcategoryAssignment=async(req,res)=>{
     try{
         // Category json
+        let temp=[]
         let categoryJson=[]; // contains all categories and subcategoires data
         let allCategoriesData=await db.Category.findMany({
             select:{
@@ -48,14 +49,18 @@ const categorySubcategoryAssignment=async(req,res)=>{
             categoryJson.push(json);
         }
         // console.log(categoryJson);
-        let stdQuestion=await db.QuestionMetadata.findMany({
-            select:{
-                id:true,
-                question:true,
-                categoryIds:true,
-                subcategoryIds:true
+        const stdQuestion = await db.QuestionMetadata.findMany({
+            select: {
+                id: true,
+                question: true,
+            },
+            where: {
+                categoryIds: { equals: ["1"] },
+                subcategoryIds: { equals: ["1"] }
             }
-        })
+        });
+
+        console.log(stdQuestion)
         let categoryPart = categoryJson.map((C) => {
             let subcategories = C.subcategory.map((sub, i) => {
                 return `{ Id: ${sub.id} , Name : ${sub.name} } ,`;
@@ -133,12 +138,13 @@ const categorySubcategoryAssignment=async(req,res)=>{
                             categoryIds:{   
                                 set :q.Maincategory
                             },
-                            categories: {
-                                connect: q.Maincategory.map(categoryId => ({ id: categoryId }))
-                            },
-                            subcategories: {
-                                connect: q.Subcategories.map(subcategoryId => ({ id: subcategoryId }))
-                            }
+                            // //remove
+                            // categories: {
+                            //     connect: q.Maincategory.map(categoryId => ({ id: categoryId }))
+                            // },
+                            // subcategories: {
+                            //     connect: q.Subcategories.map(subcategoryId => ({ id: subcategoryId }))
+                            // }
                         }
                     })
                 })
@@ -158,9 +164,13 @@ const categorySubcategoryAssignment=async(req,res)=>{
                     });
                 });
 
-            }catch(error)
-            {
-                console.log(error);
+            }catch (error) {
+                console.error('Error:', error);
+                res.status(500).json({
+                    success: false,
+                    message: 'Internal server error',
+                    error: error.message || error,
+                });
             }
         }
         
@@ -168,12 +178,13 @@ const categorySubcategoryAssignment=async(req,res)=>{
             "successs":true,
             "message":"OK here"
         })
-    }catch(error)
-    {
-        res.json({
-            "successs":false,
-            "message":"Ther is a issue"
-        })
+    }catch (error) {
+        console.error('Error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Internal server error',
+            error: error.message || error,
+        });
     }
 }
 module.exports=categorySubcategoryAssignment;

@@ -39,9 +39,12 @@ async function processQuestions(questions) {
           },
           data: {
             relatedQAIds: [...check2.relatedQAIds, qId],
-            relatedQAs: {
-              connect: { id: qId }
-            }
+            categoryIds:["1"],
+            subcategoryIds:["1"],
+            // //remove ----
+            // relatedQAs: {
+            //   connect: { id: qId }
+            // }
           }
         });
       }
@@ -56,7 +59,7 @@ const similarQuestion=async(req,res)=>{
             },
         });
         let chunkSize=10;
-        for (let i = 0; i <=200; i += chunkSize) {
+        for (let i = 251; i <=260; i += chunkSize) {
             let selectedArray = AllQuestions.slice(i, i + chunkSize);
             let Qpart=selectedArray.map((q)=>{
                 return ` Id: ${q.id} , Question: ${q.question} , \n`
