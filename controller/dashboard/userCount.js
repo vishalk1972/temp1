@@ -1,4 +1,5 @@
-const { db } = require('../../db.js');
+const { liveDb } = require('../../liveDb');
+const { devDb } = require('../../devDb');
 
 const parseDateInput = (dateStr) => {
     const [month, day, year] = dateStr.split('/').map(Number);
@@ -38,7 +39,7 @@ const userCount=async(req,res)=>{
         }
 
         // Query the QA table to get all entries within the specified date range
-        const uniqueUsers = await prisma.qA.findMany({
+        const uniqueUsers = await liveDb.qA.findMany({
             where: {
                 createdAt: {
                     gte: new Date(startDate),

@@ -1,22 +1,26 @@
-const { db } = require('../db.js');
 const Groq=require('groq-sdk')
 
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+const { PrismaClient: PrismaClientLive } = require('@prisma-live/client');
+const { PrismaClient: PrismaClientDev } = require('@prisma-dev/client');
 
+const liveDb = new PrismaClientLive();
+const devDb = new PrismaClientDev();
+
+const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+let dataToGive=[];
 async function processQuestions(questions) {
     for (const question of questions) {
       qId=question.id
       OpenAiStandardQuestion=question.question
-      console.log(qId,OpenAiStandardQuestion,"inside")
       // Find or create the QuestionMetadata
-      let check = await db.QuestionMetadata.findUnique({
+      let check = await devDb.QuestionMetadata.findUnique({
         where: {
           question: OpenAiStandardQuestion
         }
       });
   
       if (!check) {
-        check = await db.QuestionMetadata.create({
+        check = await devDb.QuestionMetadata.create({
           data: {
             question: OpenAiStandardQuestion
           }
@@ -24,7 +28,7 @@ async function processQuestions(questions) {
       }
   
       // Fetch the relatedQAIds
-      const check2 = await db.QuestionMetadata.findUnique({
+      const check2 = await devDb.QuestionMetadata.findUnique({
         where: {
           id: check.id
         },
@@ -33,7 +37,7 @@ async function processQuestions(questions) {
         }
       });
       if (!check2.relatedQAIds.includes(qId)) {
-        const data=await db.QuestionMetadata.update({
+        const data=await devDb.QuestionMetadata.update({
           where: {
             id: check.id
           },
@@ -41,28 +45,63 @@ async function processQuestions(questions) {
             relatedQAIds: [...check2.relatedQAIds, qId],
             categoryIds:["1"],
             subcategoryIds:["1"],
-            // //remove ----
-            // relatedQAs: {
-            //   connect: { id: qId }
-            // }
           }
         });
+        dataToGive.push(data);
+      }
+      else{
+        dataToGive.push(check2);
       }
     }
 }
 const similarQuestion=async(req,res)=>{
     try{
-        const AllQuestions = await db.qA.findMany({
-            select: {
-              id: true,
-              question: true
+        // const result = await devDb.processingStatus.create({
+        //   data: {
+        //     id: "2132trg5ht",
+        //     lastProcessed: new Date('2000-03-21T00:00:00.000Z'),
+        //   },
+        // });
+        // console.log("Inserted: ",result);
+          const lastProcessedDate = await devDb.processingStatus.findFirst({
+            orderBy: {
+              lastProcessed: 'desc',
             },
+            select: {
+              id:true,
+              lastProcessed: true,
+            },
+          });
+        console.log("Date before Processing",lastProcessedDate);
+        
+
+        const AllQuestions = await liveDb.qA.findMany({
+          where: {
+            createdAt: {
+              gt: lastProcessedDate.lastProcessed  ,
+            },
+          },
+          select: {
+            id: true,
+            question: true,
+            createdAt:true
+          },
         });
+        console.log("List Of New All Question : ")
+        console.log(AllQuestions);
+
         let chunkSize=10;
-        for (let i = 251; i <=260; i += chunkSize) {
+        let lastUpdatedDate=lastProcessedDate.lastProcessed;
+        console.log('Batch Processing Started : ')
+        for (let i =0; i <AllQuestions.length; i += chunkSize) {
             let selectedArray = AllQuestions.slice(i, i + chunkSize);
+            console.log("Batch List \n",selectedArray);
+
             let Qpart=selectedArray.map((q)=>{
-                return ` Id: ${q.id} , Question: ${q.question} , \n`
+              if (new Date(q.createdAt) > lastUpdatedDate) {
+                lastUpdatedDate = new Date(q.createdAt);
+              }
+              return ` Id: ${q.id} , Question: ${q.question} , \n`
             })
             const prompt=`
             Extract the 'Standard Question' from the given input question.
@@ -112,7 +151,6 @@ const similarQuestion=async(req,res)=>{
                 }
             ]
             `
-            console.log(prompt)
 
             try{
                 const completion = await groq.chat.completions.create({
@@ -139,14 +177,21 @@ const similarQuestion=async(req,res)=>{
                 console.log(error);
             }
         }
+        const updatedProcessingStatus = await devDb.processingStatus.update({
+            where: { id: lastProcessedDate.id },
+            data: { lastProcessed: lastUpdatedDate },
+         });
         
         res.json({
             success:true,
             message:'ok',
-            // data:finalData,
+            data:dataToGive,
+            updatedProcessingStatus:updatedProcessingStatus
         })
     }catch(error)
     {
+        liveDb.$disconnect();
+        devDb.$disconnect();
         res.json({
             success:false,
             message:error.message ? error.message : "There was a error"

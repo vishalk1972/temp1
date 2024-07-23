@@ -1,4 +1,5 @@
-const { db } = require('../../db.js');
+const { liveDb } = require('../../liveDb');
+const { devDb } = require('../../devDb');
 
 const parseDateInput = (dateStr) => {
     const [month, day, year] = dateStr.split('/').map(Number);
@@ -38,7 +39,7 @@ const DateFilter = async (req, res) => {
         }
 
         // Query the QA table to get all entries within the specified date range
-        const qaEntries = await db.qA.findMany({
+        const qaEntries = await liveDb.qA.findMany({
             where: {
                 createdAt: {
                     gte: startDate,
@@ -54,7 +55,7 @@ const DateFilter = async (req, res) => {
         const qaIds = qaEntries.map(entry => entry.id);
 
         // Fetch all questions from QuestionMetadata
-        const questionsMetadata = await db.questionMetadata.findMany({
+        const questionsMetadata = await devDb.questionMetadata.findMany({
             select: {
                 id: true,
                 question: true,

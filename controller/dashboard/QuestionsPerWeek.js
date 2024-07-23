@@ -1,4 +1,5 @@
-const { db } = require('../../db.js');
+const { liveDb } = require('../../liveDb');
+const { devDb } = require('../../devDb');
 
 const getWeekStartAndEndDates = (date) => {
     const dayOfWeek = date.getDay(); // 0 (Sunday) to 6 (Saturday)
@@ -70,7 +71,7 @@ const QuestionsPerWeek = async (req, res) => {
         while (currentStart <= adjustedEndDate) {
             const { startDate: weekStart, endDate: weekEnd } = getWeekStartAndEndDates(currentStart);
 
-            const questions = await db.qA.count({
+            const questions = await liveDb.qA.count({
                 where: {
                     createdAt: {
                         gte: weekStart,

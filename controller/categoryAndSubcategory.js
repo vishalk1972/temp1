@@ -1,5 +1,9 @@
-const {db}=require('../db.js')
 const Groq=require('groq-sdk')
+const { PrismaClient: PrismaClientLive } = require('@prisma-live/client');
+const { PrismaClient: PrismaClientDev } = require('@prisma-dev/client');
+
+const liveDb = new PrismaClientLive();
+const devDb = new PrismaClientDev();
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
@@ -8,7 +12,7 @@ const categorySubcategoryAssignment=async(req,res)=>{
         // Category json
         let temp=[]
         let categoryJson=[]; // contains all categories and subcategoires data
-        let allCategoriesData=await db.Category.findMany({
+        let allCategoriesData=await devDb.Category.findMany({
             select:{
                 id:true,
                 name:true,
@@ -21,7 +25,7 @@ const categorySubcategoryAssignment=async(req,res)=>{
             let subcategoryIdsArray=allCategoriesData[i].subcategoryIds;
             for(j=0;j<subcategoryIdsArray.length;j++)
             {
-                let subname=await db.Subcategory.findUnique({
+                let subname=await devDb.Subcategory.findUnique({
                     where:{
                         id:subcategoryIdsArray[j]
                     }
@@ -48,8 +52,8 @@ const categorySubcategoryAssignment=async(req,res)=>{
             json.subcategory=tempArray;
             categoryJson.push(json);
         }
-        // console.log(categoryJson);
-        const stdQuestion = await db.QuestionMetadata.findMany({
+        console.log(categoryJson);
+        const stdQuestion = await devDb.QuestionMetadata.findMany({
             select: {
                 id: true,
                 question: true,
@@ -127,7 +131,7 @@ const categorySubcategoryAssignment=async(req,res)=>{
                 const questionsArray = JSON.parse(arrayPart);
                
                 const updatedPromise=questionsArray.map(async(q)=>{
-                    return db.QuestionMetadata.update({
+                    return devDb.QuestionMetadata.update({
                         where:{
                             id:q.Qid,
                         },
@@ -138,13 +142,6 @@ const categorySubcategoryAssignment=async(req,res)=>{
                             categoryIds:{   
                                 set :q.Maincategory
                             },
-                            // //remove
-                            // categories: {
-                            //     connect: q.Maincategory.map(categoryId => ({ id: categoryId }))
-                            // },
-                            // subcategories: {
-                            //     connect: q.Subcategories.map(subcategoryId => ({ id: subcategoryId }))
-                            // }
                         }
                     })
                 })
@@ -180,6 +177,8 @@ const categorySubcategoryAssignment=async(req,res)=>{
         })
     }catch (error) {
         console.error('Error:', error);
+        liveDb.$disconnect();
+        devDb.$disconnect();
         res.status(500).json({
             success: false,
             message: 'Internal server error',

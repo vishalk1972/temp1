@@ -1,4 +1,5 @@
-const { db } = require('../../db.js');
+const { liveDb } = require('../../liveDb');
+const { devDb } = require('../../devDb');
 
 const getPercentageChange = (oldNumber, newNumber) => {
     if (oldNumber === 0) {
@@ -24,7 +25,7 @@ const PercentageChangeInQuestions = async (req, res) => {
         const previousMonthStartDate = new Date(previousMonthEndDate.getFullYear(), previousMonthEndDate.getMonth(), 1); // First day of the month before the previous month
 
         // Count questions for the last month
-        const lastMonthQuestionsCount = await db.qA.count({
+        const lastMonthQuestionsCount = await liveDb.qA.count({
             where: {
                 createdAt: {
                     gte: lastMonthStartDate,
@@ -34,7 +35,7 @@ const PercentageChangeInQuestions = async (req, res) => {
         });
 
         // Count questions for the previous month
-        const monthBeforeLastMonthQuestionsCount = await db.qA.count({
+        const monthBeforeLastMonthQuestionsCount = await liveDb.qA.count({
             where: {
                 createdAt: {
                     gte: previousMonthStartDate,

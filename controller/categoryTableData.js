@@ -1,5 +1,8 @@
-const { db } = require('../db.js');
+const { PrismaClient: PrismaClientLive } = require('@prisma-live/client');
+const { PrismaClient: PrismaClientDev } = require('@prisma-dev/client');
 
+const liveDb = new PrismaClientLive();
+const devDb = new PrismaClientDev();
 const categoryTableData = async (req, res) => {
   try {
     const data = req.body;
@@ -10,7 +13,7 @@ const categoryTableData = async (req, res) => {
       const mainCategoryName = category.name;
       const subcategoryArray = category.subcategories;
       // check if main category already exist;
-      const check=await db.Category.findUnique({
+      const check=await devDb.Category.findUnique({
         where:{
             name:mainCategoryName
         }
@@ -19,7 +22,7 @@ const categoryTableData = async (req, res) => {
       if(!check)
       {
           // Create main category first
-          mainCategory = await db.Category.create({
+          mainCategory = await devDb.Category.create({
             data: {
               name: mainCategoryName,
             }
@@ -35,14 +38,14 @@ const categoryTableData = async (req, res) => {
         const eachSubcategoryName = subcategoryArray[j];
 
         // check if subcategory already exists
-        const check=await db.Subcategory.findUnique({
+        const check=await devDb.Subcategory.findUnique({
             where:{
                 name:eachSubcategoryName
             }
         })
         if(!check)
         {
-            const subcategory = await db.Subcategory.create({
+            const subcategory = await devDb.Subcategory.create({
                 data: {
                   name: eachSubcategoryName,
                   categoryId: mainCategory.id
@@ -58,7 +61,7 @@ const categoryTableData = async (req, res) => {
       }
 
       // Update main category with subcategory IDs
-      await db.Category.update({
+      await devDb.Category.update({
         where: {
           id: mainCategory.id
         },
@@ -69,20 +72,20 @@ const categoryTableData = async (req, res) => {
     }
 
     // Fetch data with relations included
-    const dataOfCategories = await db.Category.findMany({
+    const dataOfCategories = await devDb.Category.findMany({
       include: {
         subcategories: true,
       }
     });
 
-    const dataOfSubcategories = await db.Subcategory.findMany({
+    const dataOfSubcategories = await devDb.Subcategory.findMany({
       include: {
         categories: true,
       }
     });
 
-    console.log(dataOfCategories);
-    console.log(dataOfSubcategories)
+    // console.log(dataOfCategories);
+    // console.log(dataOfSubcategories)
 
     res.json({
       success: true,
@@ -92,6 +95,8 @@ const categoryTableData = async (req, res) => {
     });
   } catch (error) {
     console.error(error);
+    liveDb.$disconnect();
+    devDb.$disconnect();
     res.json({
       success: false,
       message: error.message ? error.message : "There is an error",

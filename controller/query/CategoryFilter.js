@@ -1,4 +1,5 @@
-const { db } = require('../../db.js');
+const { liveDb } = require('../../liveDb');
+const { devDb } = require('../../devDb');
 
 const parseDateInput = (dateStr) => {
     const [month, day, year] = dateStr.split('/').map(Number);
@@ -55,7 +56,7 @@ const CategoryFilter = async (req, res) => {
             };
 
             if (category && category !== "") {
-                const categoryExists = await prisma.category.findUnique({
+                const categoryExists = await devDb.category.findUnique({
                     where: {
                         name: category
                     },
@@ -85,7 +86,7 @@ const CategoryFilter = async (req, res) => {
             };
         }
 
-        const qaEntries = await prisma.qA.findMany({
+        const qaEntries = await liveDb.qA.findMany({
             where: {
                 createdAt: {
                     gte: startDate,
@@ -99,7 +100,7 @@ const CategoryFilter = async (req, res) => {
 
         const qaIdSet = new Set(qaEntries.map(entry => entry.id));
 
-        const questions = await prisma.questionMetadata.findMany({
+        const questions = await devDb.questionMetadata.findMany({
             where: {
                 AND: [
                     categoryFilter,

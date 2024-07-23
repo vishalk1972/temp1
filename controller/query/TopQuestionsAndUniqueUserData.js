@@ -1,9 +1,10 @@
-const {db}= require('../../db.js')
+const { liveDb } = require('../../liveDb');
+const { devDb } = require('../../devDb');
 const TopQuestionsAndUniqueUserData=async(req,res)=>{
   try{
       // Top X Most Asked Question Done
         const param=req.body.count;
-        const questions = await prisma.questionMetadata.findMany({
+        const questions = await devDb.questionMetadata.findMany({
             select: {
               question: true,
               relatedQAIds: true,
@@ -35,7 +36,7 @@ const TopQuestionsAndUniqueUserData=async(req,res)=>{
               let uniqueUsers = new Set();
               for(const EachquestionId of QAIdArray)
               {
-                const Eachuser = await prisma.qA.findMany({
+                const Eachuser = await liveDb.qA.findMany({
                     where:{
                         id:EachquestionId
                     },

@@ -4,11 +4,11 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
+  url      = env("DATABASE_URL_DEV")
 }
 
 model QA {
-  id          String     @id @default(uuid())
+  id          String     @id
   userId      String
   question    String
   answer      String?
@@ -23,7 +23,7 @@ model QA {
 }
 
 model general_settings {
-  id                 String           @id @default(uuid())
+  id                 String           @id
   subscriptionAmount Float
   name               String
   subscriptionType   subscriptionType @unique
@@ -34,7 +34,7 @@ model general_settings {
 }
 
 model payment {
-  id             String                      @id @default(uuid())
+  id             String                      @id
   status         transaction_approval_status @default(PENDING)
   subscriptionId String?
   createdAt      DateTime                    @default(now())
@@ -43,7 +43,7 @@ model payment {
 }
 
 model signupToken {
-  id        String    @id @default(uuid())
+  id        String    @id
   token     String?
   status    Boolean?  @default(false)
   userId    String
@@ -53,7 +53,7 @@ model signupToken {
 }
 
 model subscription {
-  id                  String                       @id @default(uuid())
+  id                  String                       @id
   userId              String
   subscriptionType    subscriptionType             @default(free)
   queryCount          Int                          @default(50)
@@ -73,7 +73,7 @@ model subscription {
 }
 
 model tokens {
-  id        String    @id @default(uuid())
+  id        String    @id
   token     String
   user_id   String
   createdAt DateTime? @default(now())
@@ -82,7 +82,7 @@ model tokens {
 }
 
 model users {
-  id           String         @id @default(uuid())
+  id           String         @id
   email        String         @unique
   firstName    String
   lastName     String?
@@ -104,7 +104,7 @@ model users {
 }
 
 model workspaces {
-  id        String   @id @default(uuid())
+  id        String   @id
   userId    String
   isDeleted Boolean  @default(false)
   createdAt DateTime @default(now())
@@ -136,7 +136,7 @@ model QuestionMetadata {
 }
 
 model ProcessingStatus {
-  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id            String      @id
   lastProcessed DateTime
 }
 

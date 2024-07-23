@@ -1,4 +1,5 @@
-const { db } = require('../../db.js');
+const { liveDb } = require('../../liveDb');
+const { devDb } = require('../../devDb');
 
 const parseDateInput = (dateStr) => {
     const [month, day, year] = dateStr.split('/').map(Number);
@@ -38,7 +39,7 @@ const TotalQuestions = async (req, res) => {
         }
 
         // Query the database for the questions within the date range
-        const questions = await db.qA.findMany({
+        const questions = await liveDb.qA.findMany({
             where: {
                 createdAt: {
                     gte: startDate,

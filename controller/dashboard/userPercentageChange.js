@@ -1,4 +1,5 @@
-const { db } = require('../../db'); 
+const { liveDb } = require('../../liveDb');
+const { devDb } = require('../../devDb');
 const userPercentageChange = async (req, res) => {
     try {
         // Calculate dates for previous complete month (June) and month before that (May)
@@ -11,7 +12,7 @@ const userPercentageChange = async (req, res) => {
         const lastMonthStart = new Date(currentYear, currentMonth - 2, 1); // First day of month before last month (May)
 
         // Query to get count of unique users who asked questions in the last complete month (June)
-        const lastMonthUsers = await db.qA.findMany({
+        const lastMonthUsers = await liveDb.qA.findMany({
             where: {
                 createdAt: {
                     gte: lastMonthStart,
@@ -24,7 +25,7 @@ const userPercentageChange = async (req, res) => {
         const lastMonthUserCount = lastMonthUsers.length;
 
         // Query to get count of unique users who asked questions in the month before last (May)
-        const monthBeforeUsers = await db.qA.findMany({
+        const monthBeforeUsers = await liveDb.qA.findMany({
             where: {
                 createdAt: {
                     gte: new Date(currentYear, currentMonth - 3, 1), // First day of month before last month (May)
