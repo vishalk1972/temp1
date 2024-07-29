@@ -100,10 +100,11 @@ const DateFilter = async (req, res) => {
             message: 'Internal server error',
             error: error.message || error,
         });
-    } finally {
-        liveDb.$disconnect();
-        devDb.$disconnect();
-      }
+    }
+    // finally {
+    //     liveDb.$disconnect();
+    //     devDb.$disconnect();
+    // }
 };
 
 module.exports = DateFilter;
