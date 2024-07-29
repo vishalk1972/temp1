@@ -4,9 +4,18 @@ const { PrismaClient: PrismaClientDev } = require('@prisma-dev/client');
 
 const liveDb = new PrismaClientLive();
 const devDb = new PrismaClientDev();
-
+let LogData=[]
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
-
+function formatDateTime(date) {
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0'); // Months are 0-based
+    const year = date.getFullYear();
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    const seconds = String(date.getSeconds()).padStart(2, '0');
+  
+    return `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`;
+}
 const categorySubcategoryAssignment=async(req,res)=>{
     try{
         // Category json
@@ -63,6 +72,8 @@ const categorySubcategoryAssignment=async(req,res)=>{
                 subcategoryIds: { equals: ["1"] }
             }
         });
+
+        stdQuestion.sort((a, b) => a.id - b.id);
 
         console.log(stdQuestion)
         let categoryPart = categoryJson.map((C) => {
@@ -161,6 +172,11 @@ const categorySubcategoryAssignment=async(req,res)=>{
                     });
                 });
 
+                const currentDateTime = new Date();
+                const formattedDateTime = formatDateTime(currentDateTime);
+                console.log("Processed Last Batch:",formattedDateTime);
+                LogData.push(formattedDateTime);
+
             }catch (error) {
                 console.error('Error:', error);
                 res.status(500).json({
@@ -173,7 +189,8 @@ const categorySubcategoryAssignment=async(req,res)=>{
         
         res.json({
             "successs":true,
-            "message":"OK here"
+            "message":"OK here",
+            "logData":LogData
         })
     }catch (error) {
         console.error('Error:', error);

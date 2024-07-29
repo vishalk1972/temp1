@@ -5,9 +5,22 @@ const { PrismaClient: PrismaClientDev } = require('@prisma-dev/client');
 
 const liveDb = new PrismaClientLive();
 const devDb = new PrismaClientDev();
-
+let lastUpdatedDate;
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 let dataToGive=[];
+let LogData=[];
+
+function formatDateTime(date) {
+  const day = String(date.getDate()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, '0'); // Months are 0-based
+  const year = date.getFullYear();
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  const seconds = String(date.getSeconds()).padStart(2, '0');
+
+  return `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`;
+}
+
 async function processQuestions(questions) {
     for (const question of questions) {
       qId=question.id
@@ -63,6 +76,7 @@ const similarQuestion=async(req,res)=>{
         //   },
         // });
         // console.log("Inserted: ",result);
+
           const lastProcessedDate = await devDb.processingStatus.findFirst({
             orderBy: {
               lastProcessed: 'desc',
@@ -87,11 +101,23 @@ const similarQuestion=async(req,res)=>{
             createdAt:true
           },
         });
+
+        if(AllQuestions.length===0) 
+        {
+            res.json({
+              success:true,
+              message:'nothing to process',
+              data:dataToGive,
+              log:LogData
+            })
+  
+        }
         console.log("List Of New All Question : ")
+        AllQuestions.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
         console.log(AllQuestions);
 
         let chunkSize=10;
-        let lastUpdatedDate=lastProcessedDate.lastProcessed;
+        lastUpdatedDate=lastProcessedDate.lastProcessed;
         console.log('Batch Processing Started : ')
         for (let i =0; i <AllQuestions.length; i += chunkSize) {
             let selectedArray = AllQuestions.slice(i, i + chunkSize);
@@ -167,16 +193,40 @@ const similarQuestion=async(req,res)=>{
         
                 const arrayPart = response.substring(start, end);
                 const StdquestionsArray = JSON.parse(arrayPart);   
-                processQuestions(StdquestionsArray)
-                .then(() => {
-                    console.log('All questions processed')
-                })
-                .catch(err => console.error('Error processing questions:', err));
+              //   processQuestions(StdquestionsArray)
+              //   .then(() => {
+              //       console.log('All questions processed')
+              //   })
+              //   .catch(err => console.error('Error processing questions:', err));
+              //   const updatedProcessingStatus = await devDb.processingStatus.update({
+              //     where: { id: lastProcessedDate.id },
+              //     data: { lastProcessed: lastUpdatedDate },
+              //  });
+              processQuestions(StdquestionsArray)
+              .then(() => {
+                  console.log('All questions processed');
+                  return devDb.processingStatus.update({
+                      where: { id: lastProcessedDate.id },
+                      data: { lastProcessed: lastUpdatedDate },
+                  });
+              })
+              .then(updatedProcessingStatus => {
+                  console.log('Processing status updated:', updatedProcessingStatus);
+              })
+              .catch(err => {
+                  console.error('Error:', err);
+              });
             }catch(error)
             {
                 console.log(error);
             }
+            console.log('-------------- BATCH DONE ------------');
+            const currentDateTime = new Date();
+            const formattedDateTime = formatDateTime(currentDateTime);
+            console.log(formattedDateTime);
+            LogData.push(formattedDateTime);
         }
+        
         const updatedProcessingStatus = await devDb.processingStatus.update({
             where: { id: lastProcessedDate.id },
             data: { lastProcessed: lastUpdatedDate },
@@ -186,10 +236,11 @@ const similarQuestion=async(req,res)=>{
             success:true,
             message:'ok',
             data:dataToGive,
-            updatedProcessingStatus:updatedProcessingStatus
+            log:LogData
         })
     }catch(error)
     {
+        console.log('in the catch');
         liveDb.$disconnect();
         devDb.$disconnect();
         res.json({
