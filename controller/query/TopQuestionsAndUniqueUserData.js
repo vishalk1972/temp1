@@ -74,7 +74,10 @@ const TopQuestionsAndUniqueUserData=async(req,res)=>{
             "success":false,
             "message":error
         })
-    }
+    } finally {
+        liveDb.$disconnect();
+        devDb.$disconnect();
+      }
 }
 
 module.exports=TopQuestionsAndUniqueUserData;

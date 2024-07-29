@@ -142,6 +142,9 @@ const CategoryFilter = async (req, res) => {
             message: 'Internal server error',
             error: error.message || error,
         });
-    }
+    } finally {
+        liveDb.$disconnect();
+        devDb.$disconnect();
+      }
 };
 module.exports=CategoryFilter

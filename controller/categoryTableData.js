@@ -101,6 +101,9 @@ const categoryTableData = async (req, res) => {
       success: false,
       message: error.message ? error.message : "There is an error",
     });
+  }finally {
+    liveDb.$disconnect();
+    devDb.$disconnect();
   }
 };
 

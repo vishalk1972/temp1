@@ -7,7 +7,6 @@ const liveDb = new PrismaClientLive();
 const devDb = new PrismaClientDev();
 let lastUpdatedDate;
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
-let dataToGive=[];
 let LogData=[];
 
 function formatDateTime(date) {
@@ -20,8 +19,7 @@ function formatDateTime(date) {
 
   return `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`;
 }
-
-async function processQuestions(questions) {
+async function processQuestions(questions,dataToGive) {
     for (const question of questions) {
       qId=question.id
       OpenAiStandardQuestion=question.question
@@ -60,15 +58,18 @@ async function processQuestions(questions) {
             subcategoryIds:["1"],
           }
         });
+        // console.log(data,"data")
         dataToGive.push(data);
       }
       else{
+        // console.log(check2,"check")
         dataToGive.push(check2);
       }
-    }
+    } 
 }
 const similarQuestion=async(req,res)=>{
     try{
+          let dataToGive=[];
           const lastProcessedDate = await devDb.processingStatus.findFirst({
             orderBy: {
               lastProcessed: 'desc',
@@ -78,9 +79,7 @@ const similarQuestion=async(req,res)=>{
               lastProcessed: true,
             },
           });
-          console.log("Date before Processing",lastProcessedDate);
-        
-
+          // console.log("Date before Processing",lastProcessedDate);
           const AllQuestions = await liveDb.qA.findMany({
             where: {
               createdAt: {
@@ -98,7 +97,7 @@ const similarQuestion=async(req,res)=>{
           {
             return res.json({
               success: true,
-              message: 'nothing to process',
+              message: 'No new Questions to process',
               data: dataToGive,
               log: LogData
             });
@@ -107,13 +106,13 @@ const similarQuestion=async(req,res)=>{
           AllQuestions.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
           console.log(AllQuestions);
 
-        let chunkSize=10;
-        lastUpdatedDate=lastProcessedDate.lastProcessed;
-        console.log('Batch Processing Started : ')
-        for (let i =0; i <AllQuestions.length; i += chunkSize) {
+          let chunkSize=10;
+          lastUpdatedDate=lastProcessedDate.lastProcessed;
+          // console.log('Batch Processing Started : ')
+          for (let i =0; i <AllQuestions.length; i += chunkSize) {
             let selectedArray = AllQuestions.slice(i, i + chunkSize);
-            console.log("Batch List \n",selectedArray);
-
+            // console.log("Batch List \n",selectedArray);
+            let bn=0;
             let Qpart=selectedArray.map((q)=>{
               if (new Date(q.createdAt) > lastUpdatedDate) {
                 lastUpdatedDate = new Date(q.createdAt);
@@ -184,64 +183,60 @@ const similarQuestion=async(req,res)=>{
         
                 const arrayPart = response.substring(start, end);
                 const StdquestionsArray = JSON.parse(arrayPart);   
-              //   processQuestions(StdquestionsArray)
-              //   .then(() => {
-              //       console.log('All questions processed')
-              //   })
-              //   .catch(err => console.error('Error processing questions:', err));
-              //   const updatedProcessingStatus = await devDb.processingStatus.update({
-              //     where: { id: lastProcessedDate.id },
-              //     data: { lastProcessed: lastUpdatedDate },
-              //  });
-              processQuestions(StdquestionsArray)
-              .then(() => {
-                  console.log('All questions processed');
-                  return devDb.processingStatus.update({
-                      where: { id: lastProcessedDate.id },
-                      data: { lastProcessed: lastUpdatedDate },
-                  });
-              })
-              .then(updatedProcessingStatus => {
-                  console.log('Processing status updated:', updatedProcessingStatus);
-              })
-              .catch(err => {
-                  console.error('Error:', err);
-                  liveDb.$disconnect();
-                  devDb.$disconnect();
-              });
+                processQuestions(StdquestionsArray,dataToGive)
+                .then(() => {
+                    // console.log('All questions processed');
+                    return devDb.processingStatus.update({
+                        where: { id: lastProcessedDate.id },
+                        data: { lastProcessed: lastUpdatedDate },
+                    });
+                })
+                .then(updatedProcessingStatus => {
+                    console.log('Processing status updated:', updatedProcessingStatus);
+                })
+                .catch(err => {
+                    console.error('Error:', err);
+                    liveDb.$disconnect();
+                    devDb.$disconnect();
+                });
             }catch(error)
             {
                 console.log(error);
                 liveDb.$disconnect();
                 devDb.$disconnect();
             }
-            console.log('-------------- BATCH DONE ------------');
+            // console.log('-------------- BATCH DONE ------------');
             const currentDateTime = new Date();
             const formattedDateTime = formatDateTime(currentDateTime);
-            console.log(formattedDateTime);
-            LogData.push(formattedDateTime);
+            bn++;
+            // console.log(formattedDateTime);
+            let obj={
+                "batch_no":"",
+                "Completion_time":""
+            }
+            obj.batch_no=bn;
+            obj.Completion_time=formattedDateTime
+            LogData.push(obj);
         }
-        
         const updatedProcessingStatus = await devDb.processingStatus.update({
-            where: { id: lastProcessedDate.id },
-            data: { lastProcessed: lastUpdatedDate },
-         });
-        
+          where: { id: lastProcessedDate.id },
+          data: { lastProcessed: lastUpdatedDate },
+        });
          return res.json({
             success:true,
-            message:'ok',
-            data:dataToGive,
+            message:'All Questions Are Standardized',
             log:LogData
         })
     }catch(error)
     {
-        console.log('in the catch');
-        liveDb.$disconnect();
-        devDb.$disconnect();
         res.json({
             success:false,
             message:error.message ? error.message : "There was a error"
         })
+    }finally {
+      liveDb.$disconnect();
+      devDb.$disconnect();
     }
+
 }
 module.exports=similarQuestion;
