@@ -69,14 +69,6 @@ async function processQuestions(questions) {
 }
 const similarQuestion=async(req,res)=>{
     try{
-        // const result = await devDb.processingStatus.create({
-        //   data: {
-        //     id: "2132trg5ht",
-        //     lastProcessed: new Date('2000-03-21T00:00:00.000Z'),
-        //   },
-        // });
-        // console.log("Inserted: ",result);
-
           const lastProcessedDate = await devDb.processingStatus.findFirst({
             orderBy: {
               lastProcessed: 'desc',
@@ -86,35 +78,34 @@ const similarQuestion=async(req,res)=>{
               lastProcessed: true,
             },
           });
-        console.log("Date before Processing",lastProcessedDate);
+          console.log("Date before Processing",lastProcessedDate);
         
 
-        const AllQuestions = await liveDb.qA.findMany({
-          where: {
-            createdAt: {
-              gt: lastProcessedDate.lastProcessed  ,
+          const AllQuestions = await liveDb.qA.findMany({
+            where: {
+              createdAt: {
+                gt: lastProcessedDate.lastProcessed  ,
+              },
             },
-          },
-          select: {
-            id: true,
-            question: true,
-            createdAt:true
-          },
-        });
+            select: {
+              id: true,
+              question: true,
+              createdAt:true
+            },
+          });
 
-        if(AllQuestions.length===0) 
-        {
-            res.json({
-              success:true,
-              message:'nothing to process',
-              data:dataToGive,
-              log:LogData
-            })
-  
-        }
-        console.log("List Of New All Question : ")
-        AllQuestions.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
-        console.log(AllQuestions);
+          if(AllQuestions.length===0) 
+          {
+            return res.json({
+              success: true,
+              message: 'nothing to process',
+              data: dataToGive,
+              log: LogData
+            });
+          }
+          // console.log("List Of New All Question : ")
+          AllQuestions.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+          console.log(AllQuestions);
 
         let chunkSize=10;
         lastUpdatedDate=lastProcessedDate.lastProcessed;
@@ -215,10 +206,14 @@ const similarQuestion=async(req,res)=>{
               })
               .catch(err => {
                   console.error('Error:', err);
+                  liveDb.$disconnect();
+                  devDb.$disconnect();
               });
             }catch(error)
             {
                 console.log(error);
+                liveDb.$disconnect();
+                devDb.$disconnect();
             }
             console.log('-------------- BATCH DONE ------------');
             const currentDateTime = new Date();
@@ -232,7 +227,7 @@ const similarQuestion=async(req,res)=>{
             data: { lastProcessed: lastUpdatedDate },
          });
         
-        res.json({
+         return res.json({
             success:true,
             message:'ok',
             data:dataToGive,

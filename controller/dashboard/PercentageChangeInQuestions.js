@@ -1,5 +1,5 @@
-const { liveDb } = require('../../liveDb');
-const { devDb } = require('../../devDb');
+const { liveDb } = require('../../config/liveDb');
+const { devDb } = require('../../config/devDb');
 
 const getPercentageChange = (oldNumber, newNumber) => {
     if (oldNumber === 0) {

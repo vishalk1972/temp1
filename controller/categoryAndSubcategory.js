@@ -179,7 +179,9 @@ const categorySubcategoryAssignment=async(req,res)=>{
 
             }catch (error) {
                 console.error('Error:', error);
-                res.status(500).json({
+                liveDb.$disconnect();
+                devDb.$disconnect();
+                return res.status(500).json({
                     success: false,
                     message: 'Internal server error',
                     error: error.message || error,

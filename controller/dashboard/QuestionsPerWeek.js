@@ -1,5 +1,5 @@
-const { liveDb } = require('../../liveDb');
-const { devDb } = require('../../devDb');
+const { liveDb } = require('../../config/liveDb');
+const { devDb } = require('../../config/devDb');
 
 const getWeekStartAndEndDates = (date) => {
     const dayOfWeek = date.getDay(); // 0 (Sunday) to 6 (Saturday)

@@ -1,5 +1,5 @@
-const { liveDb } = require('../../liveDb');
-const { devDb } = require('../../devDb');
+const { liveDb } = require('../../config/liveDb');
+const { devDb } = require('../../config/devDb');
 const userPercentageChange = async (req, res) => {
     try {
         // Calculate dates for previous complete month (June) and month before that (May)

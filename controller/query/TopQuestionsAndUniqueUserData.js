@@ -1,5 +1,5 @@
-const { liveDb } = require('../../liveDb');
-const { devDb } = require('../../devDb');
+const { liveDb } = require('../../config/liveDb');
+const { devDb } = require('../../config/devDb');
 const TopQuestionsAndUniqueUserData=async(req,res)=>{
   try{
       // Top X Most Asked Question Done
